@@ -1,0 +1,128 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nomaanos-sentinel.local/schemas/security-event.schema.json",
+  "title": "NormalizedSecurityEvent",
+  "description": "Canonical normalized security event schema for NomaanOS Sentinel threat detection and investigation.",
+  "type": "object",
+  "required": [
+    "id",
+    "schema_version",
+    "source_type",
+    "event_type",
+    "severity",
+    "occurred_at",
+    "observed_at",
+    "ingestion_source",
+    "message",
+    "evidence"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Unique stable identifier for the event (UUID v4)."
+    },
+    "schema_version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$",
+      "description": "Semantic version of the security event schema."
+    },
+    "tenant_id": {
+      "type": ["string", "null"],
+      "format": "uuid",
+      "description": "Tenant or organization UUID. Nullable during raw initial staging, required for workspace-scoped records."
+    },
+    "source_type": {
+      "type": "string",
+      "enum": ["linux_auth", "windows_event", "cloud_audit", "network_flow"],
+      "description": "Origin category of the source log telemetry."
+    },
+    "source_host": {
+      "type": ["string", "null"],
+      "maxLength": 255,
+      "description": "Hostname or FQDN where the event was logged."
+    },
+    "event_type": {
+      "type": "string",
+      "enum": [
+        "ssh_login_success",
+        "ssh_login_failure",
+        "invalid_user_attempt",
+        "sudo_execution",
+        "session_opened",
+        "session_closed",
+        "account_locked",
+        "privilege_escalation_failure",
+        "generic_security_event"
+      ],
+      "description": "Normalized category of the security event."
+    },
+    "severity": {
+      "type": "string",
+      "enum": ["info", "low", "medium", "high", "critical"],
+      "description": "Standardized event severity level."
+    },
+    "occurred_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "UTC timestamp when the original event occurred on the source system."
+    },
+    "observed_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "UTC timestamp when NomaanOS Sentinel observed or received the log."
+    },
+    "username": {
+      "type": ["string", "null"],
+      "maxLength": 128,
+      "description": "Target or subject account name."
+    },
+    "source_ip": {
+      "type": ["string", "null"],
+      "anyOf": [
+        { "format": "ipv4" },
+        { "format": "ipv6" },
+        { "type": "null" }
+      ],
+      "description": "Originating IPv4 or IPv6 address if applicable."
+    },
+    "source_port": {
+      "type": ["integer", "null"],
+      "minimum": 1,
+      "maximum": 65535,
+      "description": "Originating TCP/UDP port number if known."
+    },
+    "process_name": {
+      "type": ["string", "null"],
+      "maxLength": 128,
+      "description": "Daemon or process name generating the log record (e.g., sshd, sudo, systemd-logind)."
+    },
+    "message": {
+      "type": "string",
+      "maxLength": 2048,
+      "description": "Bounded summary or raw message text."
+    },
+    "evidence": {
+      "type": "object",
+      "description": "Structured JSON payload capturing rule evidence, raw line references, and matched fields.",
+      "additionalProperties": true
+    },
+    "ingestion_source": {
+      "type": "string",
+      "enum": ["file_upload", "linux_agent", "api_ingest", "fixture_test"],
+      "description": "Mechanism through which the event was ingested."
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Database ingestion timestamp."
+    },
+    "integration_id": {
+      "type": ["string", "null"],
+      "format": "uuid",
+      "description": "Optional integration UUID associating the event with an enrolled host asset."
+    }
+  },
+  "additionalProperties": false
+}
+

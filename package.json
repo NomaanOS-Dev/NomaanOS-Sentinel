@@ -1,0 +1,26 @@
+{
+  "name": "nomaanos-sentinel",
+  "version": "0.1.0",
+  "private": true,
+  "description": "NomaanOS Sentinel: AI-assisted cybersecurity threat detection and response platform.",
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "dev:api": "npm run dev --workspace=apps/api",
+    "dev:web": "npm run dev --workspace=apps/web",
+    "build": "npm run build --workspaces --if-present",
+    "test": "npm run test:api",
+    "test:api": "npm run test --workspace=apps/api",
+    "test:web": "npm run build --workspace=apps/web",
+    "test:parser": "python -m pytest services/parser",
+    "test:agent": "python -m pytest services/agent",
+    "test:python": "python -m pytest services",
+    "db:up": "docker compose up -d database",
+    "db:down": "docker compose down",
+    "db:migrate": "npm run migrate --workspace=apps/api"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.4"
+  }
+}

@@ -1,0 +1,57 @@
+name: Security Scanning & Vulnerability Checks
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  schedule:
+    - cron: '0 4 * * 1' # Runs weekly on Monday at 04:00 UTC
+
+jobs:
+  dependency-audit:
+    name: Dependency Vulnerability Audit
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Audit NPM Workspaces
+        run: |
+          npm audit --audit-level=high
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Audit Python Dependencies
+        run: |
+          python -m pip install --upgrade pip pip-audit
+          pip install -e services/parser
+          pip install -e services/agent
+          python -m pip_audit || echo "::warning::pip-audit identified advisories to review"
+
+  secret-scanning:
+    name: Secret & Credential Leak Detection
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run Gitleaks Secret Detector
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        continue-on-error: false
+

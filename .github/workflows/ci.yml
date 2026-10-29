@@ -1,0 +1,119 @@
+name: Sentinel CI
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend-api:
+    name: Backend API & Integration Tests
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: nomaanos_sentinel
+          POSTGRES_USER: sentinel_dev
+          POSTGRES_PASSWORD: sentinel_local_dev_secret_2026
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run database migrations
+        env:
+          DATABASE_URL: postgresql://sentinel_dev:sentinel_local_dev_secret_2026@127.0.0.1:5433/nomaanos_sentinel
+          DATABASE_HOST: 127.0.0.1
+          DATABASE_PORT: 5433
+          DATABASE_NAME: nomaanos_sentinel
+          DATABASE_USER: sentinel_dev
+          DATABASE_PASSWORD: sentinel_local_dev_secret_2026
+        run: npm run db:migrate
+
+      - name: Run API test suite (Vitest)
+        env:
+          NODE_ENV: test
+          DATABASE_URL: postgresql://sentinel_dev:sentinel_local_dev_secret_2026@127.0.0.1:5433/nomaanos_sentinel
+          DATABASE_HOST: 127.0.0.1
+          DATABASE_PORT: 5433
+          DATABASE_NAME: nomaanos_sentinel
+          DATABASE_USER: sentinel_dev
+          DATABASE_PASSWORD: sentinel_local_dev_secret_2026
+          SESSION_SECRET: test_ci_session_secret_32chars_minimum_ok
+          COOKIE_SECURE: 'false'
+          RAZORPAY_KEY_ID: rzp_test_ci_placeholder
+          RAZORPAY_KEY_SECRET: rzp_secret_ci_placeholder
+          RAZORPAY_WEBHOOK_SECRET: whsec_ci_placeholder
+        run: npm run test:api
+
+  python-services:
+    name: Python Parser & Agent Test Suite
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest pytest-cov pydantic pyyaml psutil requests
+          pip install -e services/parser
+          pip install -e services/agent
+
+      - name: Run Parser tests
+        run: python -m pytest services/parser -v
+
+      - name: Run Agent tests
+        run: python -m pytest services/agent -v
+
+  frontend-web:
+    name: Frontend Typecheck & Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build Next.js Web App
+        env:
+          NEXT_PUBLIC_API_URL: http://localhost:4000
+        run: npm run test:web
+

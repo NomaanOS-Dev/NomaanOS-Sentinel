@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sentinel-parser"
+version = "0.1.0"
+description = "NomaanOS Sentinel Linux authentication log parser and normalization foundation"
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [
+    { name = "NomaanOS Sentinel Security Team" }
+]
+dependencies = []
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "jsonschema>=4.20.0"
+]
+
+[project.scripts]
+sentinel-parser = "sentinel_parser.cli:main"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+
